@@ -1,89 +1,74 @@
+import json
+from collections import Counter
+
 import pandas as pd
-from flask import request, render_template
+from flask import request, make_response
+from sklearn import preprocessing
 
 from app import g
+from app import loaded_model
+from helper.pre_process_data import pre_process
 from views import views
 
-# Excel parameter for output
-writer = pd.ExcelWriter('data/pr_comments_data.xlsx', engine='openpyxl')
-
 columns = [
-    'S.No',
-    'Pull request',
-    'Owner',
-    'PR comments',
-    'Review comments',
-    'Issue Comments'
+    'pr_comments',
+    'Category'
 ]
 
 
-def create_excel_from_data(data, max_pr_per_sheet=20, max_pr_count=200):
-    count = 0
-    sheet_count = 1
-    current_row = 0
+def create_dataframe(data, max_pr_count=200):
     pr_count = 1
+    df = pd.DataFrame(columns=columns)
 
     for item in data:
         print "Loading PR - {}/{}".format(pr_count, max_pr_count)
 
-        df = pd.DataFrame(columns=columns)
         pr = item.as_pull_request()
-
         pr_comments = [comments.body for comments in pr.get_comments() if comments.body != '']
-        reviews = [comments.body for comments in pr.get_reviews() if comments.body != '']
-        issues = [comments.body for comments in pr.get_issue_comments() if comments.body != '']
+        if len(pr_comments) == 0:
+            pr_comments = ["no comments"]
+        df = pd.concat(
+            [
+                df,
+                pd.DataFrame(
+                    {
+                        'pr_comments': pr_comments,
+                        'Category': [None]*len(pr_comments)
+                    })
+            ],
+            ignore_index=True,
+            sort=False
+        )
 
-        max_comments = max(len(pr_comments), len(reviews), len(issues))
-
-        for i in range(max_comments):
-            df.loc[i] = [
-                pr_count if i == 0 else '',
-                pr.html_url if i == 0 else '',
-                pr.user.login if i == 0 else '',
-                pr_comments[i] if i < len(pr_comments) else '',
-                reviews[i] if i < len(reviews) else '',
-                issues[i] if i < len(issues) else '',
-            ]
-
-        if max_comments == 0:
-            df.loc[0] = [
-                pr_count,
-                pr.html_url,
-                pr.user.login,
-                '',
-                '',
-                '',
-            ]
-
-        if count == 0:
-            df.to_excel(writer, startrow=current_row, sheet_name='Sheet {}'.format(sheet_count), index=False)
-        else:
-            df.to_excel(writer, startrow=current_row + 2, sheet_name='Sheet {}'.format(sheet_count), header=False,
-                        index=False)
-            current_row += 2
-
-        current_row += max_comments
-        count += 1
         pr_count += 1
 
-        if count == max_pr_per_sheet:
-            sheet_count += 1
-            count = 0
-            current_row = 0
-            if sheet_count > max_pr_count/max_pr_per_sheet:
-                break
-
-    writer.save()
+    return df
 
 
 @views.route('/comments', methods=['POST'])
 def get_comments():
     if request.method == 'POST':
-        query = "repo:{} author:{} type:pr"
+        data = json.loads(request.data)
+        repo = data.get('repo')
+        author = data.get('author')
+        query = "repo:{} author:{} type:pr".format(repo, author)
         data = g.search_issues(
             query=query,
             sort='created',
             order='desc'
         )
-        return render_template('tag.html', data=data)
+        data_frame = create_dataframe(data=data)
+
+        xvalid_tfidf_ngram_chars = pre_process(pr_data=data_frame)
+        y_pred = loaded_model.predict(xvalid_tfidf_ngram_chars)
+
+        encoder = preprocessing.LabelEncoder()
+        encoder.fit_transform(['No review comments', 'Minor', 'Moderate', 'Critical'])
+        result_data = encoder.inverse_transform(y_pred)
+
+        result_data = Counter(result_data)
+
+        resp = make_response(json.dumps(result_data))
+        resp.content_type = "application/json"
+        return resp
 

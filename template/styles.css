@@ -1,0 +1,56 @@
+ body {
+    background-color: #F5FCFF;
+}
+
+h1 {
+    text-align: center;
+}
+
+.flex-container {
+	width: 80%;
+	min-height: 300px;
+	margin: 50px auto;
+}
+
+.column1, .column2 {
+    background: #B7E9F7;
+    border-width: 5px;
+    border-style: dotted solid double dashed;
+    border-radius: 3px;
+}
+ .column2 {
+    margin-top: 50px;
+    padding: 20px;
+}
+
+.column1 {
+    padding: 20px 100px;
+}
+
+label {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+input {
+    float: right;
+    width: 50%;
+    height: 20px;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 16px;
+}
+
+button {
+    padding: 5px;
+    border-radius: 3px;
+    width: 50%;
+    margin: 20px 25%;
+    height: 30px;
+    font-size: 16px;
+    font-weight: bold;
+    color: cadetblue;
+    border: none;
+    cursor: pointer;
+}
