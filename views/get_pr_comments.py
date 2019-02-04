@@ -2,7 +2,7 @@ import json
 from collections import Counter
 
 import pandas as pd
-from flask import request, make_response
+from flask import request, jsonify
 from sklearn import preprocessing
 
 from app import g
@@ -68,7 +68,5 @@ def get_comments():
 
         result_data = Counter(result_data)
 
-        resp = make_response(json.dumps(result_data))
-        resp.content_type = "application/json"
-        return resp
+        return jsonify(data=result_data)
 

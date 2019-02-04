@@ -1,7 +1,3 @@
-//let usernameEle = document.getElementById('username');
-//let repoEle = document.getElementById('repo');
-//let column2 = document.querySelector(".column2")
-
 function submitFunction() {
 let usernameEle = document.getElementById('username');
 let repoEle = document.getElementById('repo');
@@ -18,11 +14,15 @@ let column2 = document.querySelector(".column2")
             "repo": repo,
             "author": username
         }),
-        mode:'no-cors'
+        headers:{
+            Accept: 'application/json',
+        },
     })
-    .then((data) => {
-        let res = data
-        console.log("res", res);
+    .then(function(response) {
+        return response.json();})
+    .then((response) => {
+        let data = response.data
+        console.log("res", data);
         column2.style.display = "block";
         var chart = new CanvasJS.Chart("chartContainer", {
             animationEnabled: true,
@@ -39,7 +39,7 @@ let column2 = document.querySelector(".column2")
                 legendMarkerColor: "grey",
                 legendText: "Comments Type",
                 dataPoints: [      
-                    { y: data["No review comment"], label: "No review comments" },
+                    { y: data["No review comments"], label: "No review comments" },
                     { y: data["Minor"],  label: "Minor" },
                     { y: data["Moderate"],  label: "Moderate" },
                     { y: data["Critical"],  label: "Critical" },
@@ -53,8 +53,6 @@ let column2 = document.querySelector(".column2")
     })
     .finally(() => {
         console.log("finally")
-//        usernameEle.value = '';
-//        repoEle.value = '';
         return false;
     })
 }
