@@ -26,7 +26,7 @@ Markdown==3.0.1
 MarkupSafe==1.1.0
 mock==2.0.0
 nltk==3.4
-numpy==1.16.0
+numpy==1.22.0
 openpyxl==2.5.14
 pandas==0.24.0
 pbr==5.1.1
